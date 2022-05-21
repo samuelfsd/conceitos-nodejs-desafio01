@@ -35,14 +35,16 @@ app.post('/users', (request, response) => {
     return response.status(400).json({error: 'User already exists!'});
   }
 
-  users.push({
+  const user = {
     id: uuidv4(),
     name,
     username,
     todos: []
-  });
+  }
 
-  return response.status(201).send();
+  users.push(user)
+
+  return response.status(201).json(user);
 });
 
 app.get('/todos', checksExistsUserAccount, (request, response) => {
@@ -52,20 +54,75 @@ app.get('/todos', checksExistsUserAccount, (request, response) => {
   return response.json(user.todos);
 });
 
+
 app.post('/todos', checksExistsUserAccount, (request, response) => {
   // Complete aqui
+  const { user } = request;
+  const { title, deadline } = request.body;
+
+  const { username } = request.headers;
+
+  const newTodo = {
+    id: uuidv4(),
+    title,
+    done:false,
+    deadline: new Date(deadline),
+    created_at: new Date()
+  }
+
+  user.todos.push(newTodo);
+
+  return response.status(201).json(newTodo);
 });
 
 app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
   // Complete aqui
+  const { user } = request;
+  const { id } = request.params;
+  const { title, deadline } = request.body;
+
+  const findTodo = user.todos.find(todo => todo.id === id);
+  
+  if(!findTodo){
+    return response.status(404).json({error: "not found todo"})
+  }
+  findTodo.title = title;
+  findTodo.deadline = new Date(deadline);
+
+  return response.json(findTodo);
 });
 
 app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
   // Complete aqui
+  const { user } = request;
+
+  const { id } = request.params;
+
+  const todo = user.todos.find(todo => todo.id === id);
+  
+  if(!todo){
+    return response.status(404).json({error: "not found todo"})
+  }
+
+  todo.done = true;
+
+  return response.json(todo);
 });
 
 app.delete('/todos/:id', checksExistsUserAccount, (request, response) => {
   // Complete aqui
+  const { user } = request;
+  const { id } = request.params;
+
+  const todoId = user.todos.findIndex(user => user.id === id);
+
+  if(todoId === -1){
+    return response.status(404).json({error: "todo not found"})
+  }
+
+  user.todos.splice(todoId, 1);
+
+  return response.status(204).json();
 });
 
 module.exports = app;
